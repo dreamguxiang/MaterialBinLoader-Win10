@@ -1,45 +1,16 @@
-﻿#include "HookAPI.h"
-#include <iostream>
-
-namespace Core {
-
-	class PathPart {
-	public:
-		std::string mUtf8StdString;
-	};
-
-	class Path {
-	public:
-		PathPart mPath;
-		Path(std::string a1) {
-			mPath.mUtf8StdString = a1;
-		}
-
-	};
-
-	template <typename T>
-	class PathBuffer {
-		T value;
-	public:
-		T& get() {
-			return value;
-		}
-		operator T& () noexcept { return value; }
-		operator T const& () const noexcept { return value; }
-	};
-
-};
-
-#include <Windows.h>
-#include "HookAPI.h"
 #include <fcntl.h>
 #include <io.h>
 #include <tchar.h>
-#include <unordered_set>
+#include <unordered_map>
 #include <filesystem>
 #include <fstream>
+#include <Windows.h>
+
+#include "Hook/Hook.h"
+#include "Plugin.h"
+#include "pugixml/pugixml.hpp"
+#include <map>
 using namespace std::filesystem;
-namespace fs = std::filesystem;
 std::unordered_map<std::string, std::string> BinList;
 
 std::string GetLocalAppDataPath() {
@@ -77,7 +48,7 @@ std::string UTF82String(std::u8string str) {
 }
 
 void ReadBin() {
-	std::filesystem::directory_iterator ent(GetMCBEPath()+"renderer\\materials");
+	std::filesystem::directory_iterator ent(GetMCBEPath() + "renderer\\materials");
 	for (auto& file : ent) {
 		if (!file.is_regular_file())
 			continue;
@@ -90,6 +61,20 @@ void ReadBin() {
 		BinList[fileName] = paths;
 	}
 }
+
+std::string getAppxVersion() {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file("./AppxManifest.xml");
+	if (!result)
+		return "";
+
+	for (pugi::xml_node tool : doc.child("Package").children("Identity"))
+	{
+		return tool.attribute("Version").as_string();
+	}
+
+}
+
 void CreateConsole()
 {
 	if (!AllocConsole()) {
@@ -120,35 +105,59 @@ void CreateConsole()
 	std::wcin.clear();
 }
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
-    switch (ul_reason_for_call)
-    {
+	switch (ul_reason_for_call)
+	{
 	case DLL_PROCESS_ATTACH: {
-		//CreateConsole();
+		CreateConsole();
 		ReadBin();
+		getAppxVersion();
 	}
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
+	case DLL_PROCESS_DETACH:
+		break;
+	}
+	return TRUE;
 }
 
-SHook2("AppPlatform::readAssetFile", std::string*, "48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? "
-	"?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9", void* _this, std::string* a2, Core::Path* a3) {
-	auto& data = a3->mPath.mUtf8StdString;
-	if (data.size() < 32) {
-		return original(_this, a2, a3);
-	}
+std::unordered_map<std::string, std::map<std::string, std::string>> GlobalSymbols{
+	{"1.19.8101.0", std::map<std::string, std::string>{ 
+		{"AppPlatform::readAssetFile","48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9"}
+    }}
+};
 
-    if (data.find("renderer/materials/") != std::string::npos && strncmp(data.c_str() + data.size() - 13, ".material.bin", 13) == 0) {
-		std::string str = data.substr(data.find_last_of('/') + 1);
-		auto it = BinList.find(str);
-		if (it != BinList.end()) {
-			std::string path = it->second;
-			a3->mPath.mUtf8StdString = path;
+
+const char* findAddr(std::string symbolName) {
+	auto it = GlobalSymbols.find(getAppxVersion());
+	if (it != GlobalSymbols.end()) {
+		auto iter = it->second.find(symbolName);
+		if (iter != it->second.end()) {
+			return iter->second.c_str();
 		}
+	}
+}
 
-    }
-	return original(_this, a2, a3);
+
+
+LL_AUTO_STATIC_HOOK(
+	Hook1,
+	HookPriority::Normal,
+	findAddr("AppPlatform::readAssetFile"),
+	std::string*, void* _this, std::string* a2, Core::Path* a3
+) {
+		auto& data = a3->mPath.mUtf8StdString;
+		if (data.size() < 32) {
+			return origin(_this, a2, a3);
+		}
+	
+	    if (data.find("renderer/materials/") != std::string::npos && strncmp(data.c_str() + data.size() - 13, ".material.bin", 13) == 0) {
+			std::string str = data.substr(data.find_last_of('/') + 1);
+			auto it = BinList.find(str);
+			if (it != BinList.end()) {
+				std::string path = it->second;
+				a3->mPath.mUtf8StdString = path;
+			}
+	
+	    }
+		return origin(_this, a2, a3);
 }

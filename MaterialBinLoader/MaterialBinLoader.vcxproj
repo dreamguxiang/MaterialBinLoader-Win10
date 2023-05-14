@@ -135,10 +135,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Hook.cpp" />
+    <ClCompile Include="Hook\Hook.cpp" />
+    <ClCompile Include="Plugin.cpp" />
+    <ClCompile Include="pugixml\pugixml.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HookAPI.h" />
+    <ClInclude Include="Hook.h" />
+    <ClInclude Include="MemoryUtils.h" />
+    <ClInclude Include="Plugin.h" />
+    <ClInclude Include="pugixml\pugiconfig.hpp" />
+    <ClInclude Include="pugixml\pugixml.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\lib\detours.lib" />
