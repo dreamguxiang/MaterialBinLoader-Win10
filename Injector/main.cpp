@@ -172,7 +172,7 @@ int main(int argc,char *argv[]) {
     }
     else if (version == 2) {
         system("explorer.exe shell:appsFolder\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe!App");
-        exePath = "Minecraft.WindowsBeta.exe";
+        exePath = "Minecraft.Windows.exe";
         system("cls");
     }
     else {

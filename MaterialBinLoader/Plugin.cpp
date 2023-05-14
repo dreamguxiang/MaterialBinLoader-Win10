@@ -39,6 +39,7 @@ std::string& replaceAll(std::string& str, const std::string& old_value, const st
 std::string GetMCBEPath() {
 	std::string path = GetLocalAppDataPath();
 	replaceAll(path, "\\Packages\\microsoft.minecraftuwp_8wekyb3d8bbwe\\AC", "");
+	replaceAll(path, "\\Packages\\microsoft.minecraftwindowsbeta_8wekyb3d8bbwe\\AC", "");
 	path += "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
 	return path;
 }
@@ -59,6 +60,7 @@ void ReadBin() {
 		std::string parentPath = UTF82String(path.parent_path().u8string());
 		std::string paths = parentPath + "\\" + fileName;
 		BinList[fileName] = paths;
+
 	}
 }
 
@@ -120,29 +122,25 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	return TRUE;
 }
 
-std::unordered_map<std::string, std::map<std::string, std::string>> GlobalSymbols{
-	{"1.19.8101.0", std::map<std::string, std::string>{ 
-		{"AppPlatform::readAssetFile","48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9"}
-    }}
-};
+#define MC_VERSION_1_19_81_01 Version{1,19,8101,0}
+#define MC_VERSION_1_19_62_01 Version{1,19,6201,0}
+#define MC_VERSION_1_19_40_02 Version{1,19,4002,0}
 
-
-const char* findAddr(std::string symbolName) {
-	auto it = GlobalSymbols.find(getAppxVersion());
-	if (it != GlobalSymbols.end()) {
-		auto iter = it->second.find(symbolName);
-		if (iter != it->second.end()) {
-			return iter->second.c_str();
-		}
+const char* findAddr() {
+	auto ver = Version::parse(getAppxVersion());
+	if (MC_VERSION_1_19_40_02 <= ver && ver <= MC_VERSION_1_19_81_01) {
+			return "48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9";
+	}
+	else {
+		return "48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9";
 	}
 }
-
 
 
 LL_AUTO_STATIC_HOOK(
 	Hook1,
 	HookPriority::Normal,
-	findAddr("AppPlatform::readAssetFile"),
+	findAddr(),
 	std::string*, void* _this, std::string* a2, Core::Path* a3
 ) {
 		auto& data = a3->mPath.mUtf8StdString;
