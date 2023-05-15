@@ -8,7 +8,6 @@
 
 #include "Hook/Hook.h"
 #include "Plugin.h"
-#include "pugixml/pugixml.hpp"
 #include <map>
 using namespace std::filesystem;
 std::unordered_map<std::string, std::string> BinList;
@@ -38,9 +37,14 @@ std::string& replaceAll(std::string& str, const std::string& old_value, const st
 
 std::string GetMCBEPath() {
 	std::string path = GetLocalAppDataPath();
-	replaceAll(path, "\\Packages\\microsoft.minecraftuwp_8wekyb3d8bbwe\\AC", "");
-	replaceAll(path, "\\Packages\\microsoft.minecraftwindowsbeta_8wekyb3d8bbwe\\AC", "");
-	path += "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
+	if (path.find("\\Packages\\microsoft.minecraftuwp_8wekyb3d8bbwe\\AC") != std::string::npos) {
+		replaceAll(path, "\\Packages\\microsoft.minecraftuwp_8wekyb3d8bbwe\\AC", "");
+		path += "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
+	}
+	else {
+		replaceAll(path, "\\Packages\\microsoft.minecraftwindowsbeta_8wekyb3d8bbwe\\AC", "");
+		path += "\\Packages\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
+	}
 	return path;
 }
 
@@ -64,28 +68,12 @@ void ReadBin() {
 	}
 }
 
-std::string getAppxVersion() {
-	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_file("./AppxManifest.xml");
-	if (!result)
-		return "";
-
-	for (pugi::xml_node tool : doc.child("Package").children("Identity"))
-	{
-		return tool.attribute("Version").as_string();
-	}
-
-}
-
 void CreateConsole()
 {
 	if (!AllocConsole()) {
-		// Add some error handling here.
-		// You can call GetLastError() to get more info about the error.
 		return;
 	}
 	SetConsoleCP(CP_UTF8);
-	// std::cout, std::clog, std::cerr, std::cin
 	FILE* fDummy;
 	freopen_s(&fDummy, "CONOUT$", "w", stdout);
 	freopen_s(&fDummy, "CONOUT$", "w", stderr);
@@ -95,7 +83,6 @@ void CreateConsole()
 	std::cerr.clear();
 	std::cin.clear();
 
-	// std::wcout, std::wclog, std::wcerr, std::wcin
 	HANDLE hConOut = CreateFile(_T("CONOUT$"), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	HANDLE hConIn = CreateFile(_T("CONIN$"), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
@@ -106,13 +93,12 @@ void CreateConsole()
 	std::wcerr.clear();
 	std::wcin.clear();
 }
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH: {
-		CreateConsole();
 		ReadBin();
-		getAppxVersion();
 	}
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
@@ -122,18 +108,20 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	return TRUE;
 }
 
-#define MC_VERSION_1_19_81_01 Version{1,19,8101,0}
-#define MC_VERSION_1_19_62_01 Version{1,19,6201,0}
-#define MC_VERSION_1_19_40_02 Version{1,19,4002,0}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const char* findAddr() {
-	auto ver = Version::parse(getAppxVersion());
-	if (MC_VERSION_1_19_40_02 <= ver && ver <= MC_VERSION_1_19_81_01) {
-			return "48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9";
-	}
-	else {
-		return "48 89 ?? ?? ?? 55 56 57 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 33 C4 48 89 ?? ?? 49 8B C0 48 8B FA 48 89 ?? ?? 45 33 F6 44 89 ?? ?? ?? 0F 57 C9";
-	}
+#define FIND_ADDR(Ver,Sig)                            \
+    {void* ptr = ll::memory::resolveSignature(Sig);    \
+     if (ptr) { return Sig;  }}              
+   
+const char* findAddr() {	
+	FIND_ADDR("1.19.40-1.19.81", "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 70 49 8B C0")
+	//FIND_ADDR("1.20.0.23",       "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 D0")
+
+	////////////////////////error/////////////////////
+	CreateConsole();
+	std::cout << "Not adapted to current version" << std::endl;
+	return "";
 }
 
 
@@ -143,19 +131,20 @@ LL_AUTO_STATIC_HOOK(
 	findAddr(),
 	std::string*, void* _this, std::string* a2, Core::Path* a3
 ) {
-		auto& data = a3->mPath.mUtf8StdString;
-		if (data.size() < 32) {
-			return origin(_this, a2, a3);
-		}
-	
-	    if (data.find("renderer/materials/") != std::string::npos && strncmp(data.c_str() + data.size() - 13, ".material.bin", 13) == 0) {
-			std::string str = data.substr(data.find_last_of('/') + 1);
-			auto it = BinList.find(str);
-			if (it != BinList.end()) {
-				std::string path = it->second;
-				a3->mPath.mUtf8StdString = path;
-			}
-	
-	    }
+	auto& data = a3->mPath.mUtf8StdString;
+	std::cout << data << std::endl;
+	if (data.size() < 32) {
 		return origin(_this, a2, a3);
+	}
+
+	if (data.find("renderer/materials/") != std::string::npos && strncmp(data.c_str() + data.size() - 13, ".material.bin", 13) == 0) {
+		std::string str = data.substr(data.find_last_of('/') + 1);
+		auto it = BinList.find(str);
+		if (it != BinList.end()) {
+			std::string path = it->second;
+			a3->mPath.mUtf8StdString = path;
+		}
+
+	}
+	return origin(_this, a2, a3);
 }

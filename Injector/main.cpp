@@ -90,9 +90,14 @@ std::string GetLocalAppDataPath() {
 	return path;
 }
 
-std::string GetMCBEPath() {
-	std::string path = GetLocalAppDataPath();
-	path += "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
+std::string GetMCBEPath(bool isPre) {
+    std::string path = GetLocalAppDataPath();
+    if (!isPre) {
+        path += "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
+    }
+    else {
+        path += "\\Packages\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\\LocalState\\games\\com.mojang\\";
+    }
     return path;
 }
 
@@ -111,8 +116,8 @@ void clearDir(std::string dir) {
 }
 
 
-void copy2MCPath() {
-    clearDir(GetMCBEPath() + "renderer\\materials\\");
+void copy2MCPath(bool isPre) {
+    clearDir(GetMCBEPath(isPre) + "renderer\\materials\\");
     std::filesystem::directory_iterator ent("./renderer/materials");
     for (auto& file : ent) {
         if (!file.is_regular_file())
@@ -124,7 +129,7 @@ void copy2MCPath() {
         std::string parentPath = path.parent_path().u8string();
         std::string paths = parentPath + "\\" + fileName;
 
-        std::filesystem::copy_file(paths, GetMCBEPath() + "renderer\\materials\\" + fileName, std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy_file(paths, GetMCBEPath(isPre) + "renderer\\materials\\" + fileName, std::filesystem::copy_options::overwrite_existing);
     }
 }
 
@@ -157,20 +162,23 @@ void createDir(std::string dir) {
 int main(int argc,char *argv[]) {
     createDir("renderer");
     createDir("renderer/materials");
-    createDir(GetMCBEPath() + "renderer");
-    createDir(GetMCBEPath() + "renderer/materials");
-    copy2MCPath();
     std::cout << "[1]Release  [2]Preview" << std::endl;
     int version;
     std::cin >> version;
     std::string exePath = "Minecraft.Windows.exe";
     if (version == 1) {
+        createDir(GetMCBEPath(false) + "renderer");
+        createDir(GetMCBEPath(false) + "renderer/materials");
+        copy2MCPath(false);
         system("explorer.exe shell:appsFolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!App");
         exePath = "Minecraft.Windows.exe";
         system("cls");
 
     }
     else if (version == 2) {
+        createDir(GetMCBEPath(true) + "renderer");
+        createDir(GetMCBEPath(true) + "renderer/materials");
+        copy2MCPath(true);
         system("explorer.exe shell:appsFolder\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe!App");
         exePath = "Minecraft.Windows.exe";
         system("cls");

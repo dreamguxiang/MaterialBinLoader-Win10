@@ -1,18 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="Hook.h">
-      <Filter>Hook</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryUtils.h">
-      <Filter>Hook</Filter>
-    </ClInclude>
     <ClInclude Include="Plugin.h" />
-    <ClInclude Include="pugixml\pugixml.hpp">
-      <Filter>pugixml</Filter>
+    <ClInclude Include="Hook\Hook.h">
+      <Filter>Hook</Filter>
     </ClInclude>
-    <ClInclude Include="pugixml\pugiconfig.hpp">
-      <Filter>pugixml</Filter>
+    <ClInclude Include="Hook\MemoryUtils.h">
+      <Filter>Hook</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -22,17 +16,11 @@
     <Filter Include="Hook">
       <UniqueIdentifier>{b3d102a5-e03e-4bc2-8504-7e1cc3b7f4f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="pugixml">
-      <UniqueIdentifier>{c699a2b3-0a40-473d-9350-89f34f6d24a4}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="Hook\Hook.cpp">
       <Filter>Hook</Filter>
-    </ClCompile>
-    <ClCompile Include="pugixml\pugixml.cpp">
-      <Filter>pugixml</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
