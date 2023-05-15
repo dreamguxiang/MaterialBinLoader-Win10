@@ -112,18 +112,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 #define FIND_ADDR(Ver,Sig)                            \
     {void* ptr = ll::memory::resolveSignature(Sig);    \
-     if (ptr) { return Sig;  }}              
+     if (ptr) { return ptr;  }}              
    
-const char* findAddr() {	
-	FIND_ADDR("1.19.40-1.19.81", "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 70 49 8B C0")
-	//FIND_ADDR("1.20.0.23",       "48 89 5C 24 08 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 D0")
+
+#include "Hook/MemoryUtils.h"
+void* findAddr() {	
+	FIND_ADDR("1.19.40-1.19.81", "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 70 49 8B C0 ")
+    FIND_ADDR("1.20.0.23", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 20 49 8B C0")
 
 	////////////////////////error/////////////////////
 	CreateConsole();
-	std::cout << "Not adapted to current version" << std::endl;
-	return "";
+	std::cout << "Not adapted to current version,Try a unified solution!!!" << std::endl;
+	return nullptr;
 }
-
 
 LL_AUTO_STATIC_HOOK(
 	Hook1,
@@ -132,7 +133,6 @@ LL_AUTO_STATIC_HOOK(
 	std::string*, void* _this, std::string* a2, Core::Path* a3
 ) {
 	auto& data = a3->mPath.mUtf8StdString;
-	std::cout << data << std::endl;
 	if (data.size() < 32) {
 		return origin(_this, a2, a3);
 	}

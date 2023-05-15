@@ -46,6 +46,7 @@ namespace ll::memory {
      * @return FuncPtr
      */
     FuncPtr resolveIdentifier(const char* identifier);
+    FuncPtr resolveIdentifier(void* identifier);
 
     // Use a individual struct to register hook, in case DefType can't be constructed.
     template <typename T>
@@ -150,6 +151,7 @@ namespace ll::memory {
     */
 #define LL_AUTO_STATIC_HOOK(DefType, priority, identifier, Ret, ...)                                                   \
     LL_VA_EXPAND(LL_AUTO_STATIC_HOOK_IMPL(DefType, , priority, identifier, Ret, __VA_ARGS__))
+
 
 #define LL_INSTANCE_HOOK_IMPL(DefType, type, priority, identifier, Ret, ...)                                           \
     LL_VA_EXPAND(LL_MANUAL_REG_HOOK_IMPL(                                                                              \

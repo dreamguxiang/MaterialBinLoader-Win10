@@ -253,6 +253,11 @@ namespace ll::memory {
 		return resolveSignature(identifier);
 	}
 
+    FuncPtr resolveIdentifier(void* identifier) {
+        //auto p = resolveSymbol(identifier);
+        return identifier;
+    }
+
     //FuncPtr resolveSymbol(const char* symbol) { return pl::symbol_provider::pl_resolve_symbol(symbol); }
 
     FuncPtr resolveSignature(const char* signature) { return reinterpret_cast<FuncPtr>(FindSig(signature)); }
