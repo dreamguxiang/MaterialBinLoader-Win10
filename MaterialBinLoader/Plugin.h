@@ -23,9 +23,14 @@ namespace Core {
 	class PathBuffer {
 		T value;
 	public:
+		PathBuffer() {};
+		PathBuffer(T v) {
+			value = v;
+		}
 		T& get() {
 			return value;
 		}
+
 		operator T& () noexcept { return value; }
 		operator T const& () const noexcept { return value; }
 	};

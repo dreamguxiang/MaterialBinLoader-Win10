@@ -1,5 +1,7 @@
 # MaterialBinLoader-Win10
-让渲染龙从用户目录里读取.material.bin
+让渲染龙从用户目录或材质包里读取.material.bin
+
+优先级：材质包>用户目录
 
 ## 使用方法
 
