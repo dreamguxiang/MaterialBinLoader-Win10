@@ -4,13 +4,13 @@
 /* Includes */
 #include <Windows.h>
 #include <iostream>
+#include <filesystem>
 #include <AclAPI.h>
 #include <string>
 #include <sddl.h>
 #include <TlHelp32.h>
 #include <vector>
 #include <unordered_map>
-#include <filesystem>
 #include <fstream>
 
 DWORD SetDllPermissions(std::string wstrFilePath) { /* From UC(https://www.unknowncheats.me/forum/general-programming-and-reversing/177183-basic-intermediate-techniques-uwp-app-modding.html) */
@@ -118,40 +118,25 @@ void clearDir(std::string dir) {
 
 void copy2MCPath(bool isPre) {
     clearDir(GetMCBEPath(isPre) + "renderer\\materials\\");
-    std::filesystem::directory_iterator ent("./renderer/materials");
-    for (auto& file : ent) {
-        if (!file.is_regular_file())
-            continue;
-        auto& path = file.path();
-        auto fileName = path.filename().u8string();
-
-        std::string ext = path.extension().u8string();
-        std::string parentPath = path.parent_path().u8string();
-        std::string paths = parentPath + "\\" + fileName;
-
-        std::filesystem::copy_file(paths, GetMCBEPath(isPre) + "renderer\\materials\\" + fileName, std::filesystem::copy_options::overwrite_existing);
+    for (auto& file : std::filesystem::directory_iterator("./renderer/materials")) {
+        if (file.is_regular_file()) {
+            auto& path = file.path();
+            std::filesystem::copy_file(path, GetMCBEPath(isPre) + "renderer\\materials\\" + path.filename().u8string(), std::filesystem::copy_options::overwrite_existing);
+        }
     }
 }
 
-
 bool Inject(const char* dllPath, std::string exePath) {
     DWORD PID = GetMCBEPID(exePath);
-    if (!PID)
-        return false;
+    if (!PID) return false;
     HANDLE Proc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
-    if (!Proc)
-        return false;
+    if (!Proc) return false;
     char DllName[MAX_PATH];
     GetFullPathNameA(dllPath, MAX_PATH, DllName, NULL);
-    LPVOID LoadLib = (LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
-    if (!LoadLib)
-        return false;
-    LPVOID RemoteString = VirtualAllocEx(Proc, NULL, strlen(DllName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    if (!RemoteString)
-        return false;
+    LPVOID RemoteString = VirtualAllocEx(Proc, NULL, strlen(DllName), MEM_COMMIT, PAGE_READWRITE);
+    if (!RemoteString) return false;
     WriteProcessMemory(Proc, RemoteString, DllName, strlen(DllName), NULL);
-    CreateRemoteThread(Proc, NULL, NULL, (LPTHREAD_START_ROUTINE)LoadLib, (LPVOID)RemoteString, NULL, NULL);
-
+    CreateRemoteThread(Proc, NULL, NULL, (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA"), RemoteString, NULL, NULL);
     CloseHandle(Proc);
     return true;
 }
