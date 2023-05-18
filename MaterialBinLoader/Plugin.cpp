@@ -7,6 +7,7 @@
 #include <Windows.h>
 
 #include "Hook/Hook.h"
+#include "Hook/MemoryUtils.h"
 #include "Plugin.h"
 #include <map>
 using namespace std::filesystem;
@@ -113,34 +114,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 #define FIND_ADDR(Ver,Sig)                            \
     {void* ptr = ll::memory::resolveSignature(Sig);    \
      if (ptr) { return ptr;  }}              
-   
-
-#include "Hook/MemoryUtils.h"
-constexpr uint64_t do_hash(std::string_view x) {
-	// ap hash
-	uint64_t rval = 0;
-	for (size_t i = 0; i < x.size(); ++i) {
-		rval *= 128;
-		rval += x[i];
-		rval += 4;
-	}
-	return rval;
-}
-
-constexpr uint64_t do_hash2(const char* str) {
-	// ap hash
-	auto stra = str;
-	uint64_t ret = 0xCBF29CE484222325LL;
-	if (str)
-	{
-		while (*stra)
-		{
-			auto v1 = stra++;
-			ret = *(unsigned __int8*)v1 ^ (0x100000001B3LL * ret);
-		}
-	}
-	return ret;
-}
 
 
 void* findAddr(std::string name) {	
@@ -165,46 +138,6 @@ void* findAddr(std::string name) {
 	}
 	return nullptr;
 }
-
-
-class ResourceLocation
-{
-public:
-	int32_t mFileSystem;
-	Core::PathBuffer<std::string> mPath;
-	uint64_t mPathHash;
-	size_t mFullHash;
-	ResourceLocation() {};
-	ResourceLocation(std::string path) {
-		mFileSystem = 0;
-		mPath = Core::PathBuffer<std::string>::PathBuffer(path);
-		_computeHashes();
-	}
-	void _computeHashes() {
-		auto hash = do_hash2(this->mPath.get().c_str());
-		this->mPathHash = hash;
-		this->mFullHash = std::hash<unsigned char>{}(this->mFileSystem) ^ hash;
-	}
-};
-
-
-
-class ResourcePackManager {
-public:
-	virtual ~ResourcePackManager();
-	virtual bool load(class ResourceLocation const&, std::string&) const;
-	virtual bool load(class ResourceLocation const&, std::string&, std::vector<std::string> const&) const;
-	virtual bool load(class ResourceLocationPair const&, std::string&, std::vector<std::string> const&) const;
-	virtual std::vector<class LoadedResourceData> loadAllVersionsOf(class ResourceLocation const&) const;
-	virtual bool isInStreamableLocation(class ResourceLocation const&) const;
-	virtual bool isInStreamableLocation(class ResourceLocation const&, std::vector<std::string> const&) const;
-	virtual class Core::PathBuffer<std::string> getPath(class ResourceLocation const&) const;
-	virtual class Core::PathBuffer<std::string> getPath(class ResourceLocation const&, std::vector<std::string> const&) const;
-	virtual class Core::PathBuffer<std::string> getPathContainingResource(class ResourceLocation const&) const;
-	virtual class Core::PathBuffer<std::string> getPathContainingResource(class ResourceLocation const&, std::vector<std::string>) const;
-	virtual struct std::pair<int, std::string const&> getPackStackIndexOfResource(class ResourceLocation const&, std::vector<std::string> const&) const;
-	virtual bool hasCapability(class std::basic_string_view<char, struct std::char_traits<char>>) const;
-};
 
 ResourcePackManager* GlobalResourcePackManager = nullptr;
 
