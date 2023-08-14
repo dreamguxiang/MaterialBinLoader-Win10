@@ -99,6 +99,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH: {
+		//CreateConsole();
 		ReadBin();
 	}
 	case DLL_THREAD_ATTACH:
@@ -119,16 +120,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 void* findAddr(std::string name) {	
 	switch (do_hash(name.c_str()))
 	{
-	case do_hash("readFile"): {
+	case do_hash("AppPlatform::readAssetFile"): {
 		FIND_ADDR("1.19.40-1.19.81", "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 70 49 8B C0 ");
 		FIND_ADDR("1.20.0.23", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 20 49 8B C0");
 		////////////////////////error/////////////////////
 		CreateConsole();
-		std::cout << "XXX::readFile address not found!!!" << std::endl;
+		std::cout << "AppPlatform::readAssetFile address not found!!!" << std::endl;
 		break;
 	}
 	case do_hash("ResourcePackManager::ResourcePackManager"): {
-		FIND_ADDR("", "48 89 ?? ?? ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 41 0F B6 F1 49 8B D8 4C 8B F2 48 8B F9 48 89 ?? ?? 48 89 ?? ?? 48 8D ?? ?? 48 89 ?? ?? 45 33 ED 4C 89 ?? ?? 48 8B ?? ?? 48 85 C9 74 ?? 48 8B 01 48 8D ?? ?? 48 8B 00 FF ?? ?? ?? ?? ??");
+		FIND_ADDR("?????", "48 89 ?? ?? ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 41 0F B6 F1 49 8B D8 4C 8B F2 48 8B F9 48 89 ?? ?? 48 89 ?? ?? 48 8D ?? ?? 48 89 ?? ?? 45 33 ED 4C 89 ?? ?? 48 8B ?? ?? 48 85 C9 74 ?? 48 8B 01 48 8D ?? ?? 48 8B 00 FF ?? ?? ?? ?? ??");
+		FIND_ADDR("1.20.10.23", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 45 0F B6 F1 49 8B F8 48 8B F2 48 8B D9");
 		////////////////////////error/////////////////////
 		CreateConsole();
 		std::cout << "ResourcePackManager::ResourcePackManager address not found!!!" << std::endl;
@@ -156,7 +158,7 @@ LL_AUTO_STATIC_HOOK(
 LL_AUTO_STATIC_HOOK(
 	Hook1,
 	HookPriority::Normal,
-	findAddr("readFile"),
+	findAddr("AppPlatform::readAssetFile"),
 	std::string*, void* _this, std::string* a2, Core::Path* a3
 ) {
 	auto& data = a3->mPath.mUtf8StdString;
@@ -167,21 +169,23 @@ LL_AUTO_STATIC_HOOK(
 	if (data.find("data/renderer/materials/") != std::string::npos && strncmp(data.c_str() + data.size() - 13, ".material.bin", 13) == 0) {
 		std::string str = data.substr(data.find_last_of('/') + 1);
 		std::string* resourceStream = new std::string();
-		auto result = GlobalResourcePackManager->load(*new ResourceLocation("renderer/materials/"+str), *resourceStream);
-		if (!result) {
-			//std::cout << "Failure location=" << str << std::endl;
-			auto it = BinList.find(str);
-			if (it != BinList.end()) {
-				std::string path = it->second;
-				a3->mPath.mUtf8StdString = path;
+		if (GlobalResourcePackManager) {
+			auto result = GlobalResourcePackManager->load(*new ResourceLocation("renderer/materials/" + str), *resourceStream);
+			if (!result) {
+				//std::cout << "Failure location=" << str << std::endl;
+				auto it = BinList.find(str);
+				if (it != BinList.end()) {
+					std::string path = it->second;
+					a3->mPath.mUtf8StdString = path;
+				}
 			}
-		}
-		else {
-			//std::cout << "Success location=" << str <<" len:"<< resourceStream->length() << std::endl;
-			origin(_this, a2, a3);
-			a2->clear();
-			*a2 = *resourceStream;
-			return a2;
+			else {
+				//std::cout << "Success location=" << str <<" len:"<< resourceStream->length() << std::endl;
+				origin(_this, a2, a3);
+				a2->clear();
+				*a2 = *resourceStream;
+				return a2;
+			}
 		}
 	}
 	return origin(_this, a2, a3);
