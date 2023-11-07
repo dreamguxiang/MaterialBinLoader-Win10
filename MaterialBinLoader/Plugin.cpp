@@ -123,6 +123,8 @@ void* findAddr(std::string name) {
 	case do_hash("AppPlatform::readAssetFile"): {
 		FIND_ADDR("1.19.40-1.19.81", "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 70 49 8B C0 ");
 		FIND_ADDR("1.20.0.23", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 45 20 49 8B C0");
+		FIND_ADDR("1.20.30", "48 89 5C 24 ? 55 56 57 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 49 8B C0");
+		FIND_ADDR("1.20.30.20", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 49 8B C0 48 8B FA");
 		////////////////////////error/////////////////////
 		CreateConsole();
 		std::cout << "AppPlatform::readAssetFile address not found!!!" << std::endl;
@@ -131,6 +133,7 @@ void* findAddr(std::string name) {
 	case do_hash("ResourcePackManager::ResourcePackManager"): {
 		FIND_ADDR("?????", "48 89 ?? ?? ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 41 0F B6 F1 49 8B D8 4C 8B F2 48 8B F9 48 89 ?? ?? 48 89 ?? ?? 48 8D ?? ?? 48 89 ?? ?? 45 33 ED 4C 89 ?? ?? 48 8B ?? ?? 48 85 C9 74 ?? 48 8B 01 48 8D ?? ?? 48 8B 00 FF ?? ?? ?? ?? ??");
 		FIND_ADDR("1.20.10.23", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 45 0F B6 F1 49 8B F8 48 8B F2 48 8B D9");
+		FIND_ADDR("1.20.30.21", "4C 8B DC 53 55 56 57 41 56 48 81 EC ? ? ? ? 41 0F B6 E9 49 8B D8 48 8B F2 48 8B F9");
 		////////////////////////error/////////////////////
 		CreateConsole();
 		std::cout << "ResourcePackManager::ResourcePackManager address not found!!!" << std::endl;
